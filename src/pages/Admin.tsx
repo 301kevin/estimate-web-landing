@@ -7,8 +7,11 @@ const Admin: React.FC = () => {
 
   React.useEffect(() => {
     api.get("/api/admin/users")
-      .then(r => setRows(r.data))
-      .catch(e => setErr("권한 오류 또는 토큰 누락"));
+      .then((r) => setRows(r.data))
+      .catch((err) => {
+        console.error("관리자 사용자 목록 호출 에러:", err);
+        setErr("권한 오류 또는 토큰 누락");
+      });
   }, []);
 
   return (
