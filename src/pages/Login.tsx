@@ -1,42 +1,50 @@
-import React, { useState } from "react";
-import { api, setAuthToken } from "../api";
+// src/pages/Login.tsx
+import * as React from "react";
 import { useNavigate } from "react-router-dom";
+import { api, setAuthToken } from "../api";
 
 const Login: React.FC = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [err, setErr] = React.useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setErr("");
 
+    if (!username.trim() || !password) {
+      setErr("아이디와 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await api.post("/api/auth/login", {
-        username,
+        username: username.trim(),
         password,
       });
 
-      const token = res.data?.accessToken;
+      const token = res.data.accessToken;
       if (!token) {
-        throw new Error("토큰 없음");
+        setErr("토큰이 응답에 없습니다.");
+        return;
       }
 
-      // ✅ 토큰 저장
+      // 토큰 + 관리자 아이디 저장
       setAuthToken(token);
-      // ✅ 현재 로그인한 관리자 이름도 저장 (헤더에 표시용)
-      localStorage.setItem("adminUsername", username);
+      localStorage.setItem("adminUsername", username.trim());
 
-      navigate("/admin");
-    } catch (err: any) {
-      console.error("login error:", err);
-      if (err.response?.status === 401) {
-        setError("아이디 또는 비밀번호가 올바르지 않습니다.");
+      navigate("/admin", { replace: true });
+    } catch (error: any) {
+      console.error("login error:", error);
+      const status = error.response?.status;
+      if (status === 401) {
+        setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
       } else {
-        setError("로그인 중 오류가 발생했습니다.");
+        setErr("로그인에 실패했습니다.");
       }
     } finally {
       setLoading(false);
@@ -44,43 +52,75 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: 360, margin: "80px auto", fontFamily: "system-ui" }}>
-      <h2>관리자 로그인</h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 12 }}>
-          <label>
+    <div
+      style={{
+        maxWidth: 360,
+        margin: "72px auto",
+        padding: 24,
+        borderRadius: 12,
+        border: "1px solid #e5e7eb",
+        fontFamily: "system-ui",
+        background: "white",
+      }}
+    >
+      <h1 style={{ fontSize: 20, marginBottom: 16 }}>관리자 로그인</h1>
+
+      <form
+        onSubmit={handleSubmit}
+        style={{ display: "flex", flexDirection: "column", gap: 12 }}
+      >
+        <div>
+          <label style={{ fontSize: 13, display: "block", marginBottom: 4 }}>
             아이디
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              style={{ width: "100%", padding: 8, marginTop: 4 }}
-              autoComplete="username"
-            />
           </label>
+          <input
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
+            style={{
+              width: "100%",
+              padding: 8,
+              fontSize: 13,
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+            }}
+          />
         </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <label>
+        <div>
+          <label style={{ fontSize: 13, display: "block", marginBottom: 4 }}>
             비밀번호
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{ width: "100%", padding: 8, marginTop: 4 }}
-              autoComplete="current-password"
-            />
           </label>
+          <input
+            type="password"
+            value={password}
+            autoComplete="current-password"
+            onChange={(e) => setPassword(e.target.value)}
+            style={{
+              width: "100%",
+              padding: 8,
+              fontSize: 13,
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+            }}
+          />
         </div>
 
-        {error && <p style={{ color: "crimson" }}>{error}</p>}
+        {err && (
+          <p style={{ fontSize: 12, color: "crimson", marginTop: 4 }}>{err}</p>
+        )}
 
         <button
           type="submit"
           disabled={loading}
           style={{
-            width: "100%",
-            padding: 10,
-            marginTop: 8,
+            marginTop: 4,
+            padding: "8px 12px",
+            fontSize: 14,
+            borderRadius: 999,
+            border: "none",
+            background: "#4f46e5",
+            color: "white",
             cursor: loading ? "default" : "pointer",
           }}
         >
